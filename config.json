@@ -1,0 +1,14 @@
+{
+  "datasources": [
+    {
+      "name": "mysql",
+      "driver": "mysql",
+      "dsn": "root:example@/tamatest"
+    },
+    {
+      "name": "spreadsheet",
+      "driver": "spreadsheet",
+      "dsn": "1_Um82wSffMiMVqvRISAo348Ti8u51CLdV_kGN7TYDko"
+    }
+  ]
+}
