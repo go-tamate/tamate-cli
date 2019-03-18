@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/go-tamate/tamate"
+	"github.com/go-tamate/tamate/driver"
+	"github.com/olekukonko/tablewriter"
 )
 
 type ShowCommand struct {
@@ -66,10 +69,64 @@ func (c *ShowCommand) show(cfg *DatasourceConfig, name string) error {
 		return err
 	}
 
-	fmt.Printf("[Schema]\n")
-	fmt.Printf("%v\n", schema)
-	fmt.Printf("[Rows]\n")
-	fmt.Printf("%v\n", rows)
+	if err := showSchema(schema); err != nil {
+		return err
+	}
+	if err := showRows(rows); err != nil {
+		return err
+	}
+	return nil
+}
 
+func showSchema(sc *driver.Schema) error {
+	if len(sc.Columns) == 0 {
+		return nil
+	}
+
+	columnHeaderData := []string{"Name", "Type", "NotNull", "AutoIncrement"}
+
+	columnBodyData := make([][]string, 0)
+	for _, col := range sc.Columns {
+		notNull := "FALSE"
+		if col.NotNull {
+			notNull = "TRUE"
+		}
+		autoIncrement := "FALSE"
+		if col.AutoIncrement {
+			autoIncrement = "TRUE"
+		}
+		columnBodyData = append(columnBodyData, []string{col.Name, col.Type.String(), notNull, autoIncrement})
+	}
+
+	fmt.Printf("[Column]\n")
+	return showTable(columnHeaderData, columnBodyData)
+}
+
+func showRows(rows []*driver.Row) error {
+	if len(rows) == 0 {
+		return nil
+	}
+
+	headerData := rows[0].Values.ColumnNames()
+
+	bodyData := make([][]string, 0)
+	for _, row := range rows {
+		data := make([]string, 0)
+		for _, rowVal := range row.Values {
+			data = append(data, rowVal.String())
+		}
+		bodyData = append(bodyData, data)
+	}
+
+	fmt.Printf("[Rows]\n")
+	return showTable(headerData, bodyData)
+}
+
+func showTable(header []string, body [][]string) error {
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetAutoFormatHeaders(false)
+	table.SetHeader(header)
+	table.AppendBulk(body)
+	table.Render()
 	return nil
 }
